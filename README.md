@@ -2,19 +2,8 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# SD Water Watch
 
-This contains everything you need to run your app locally.
+Thanks for visiting my project! Given the pollution issues at some San Diego beaches, particularly those closer to the mouth of the Tijuana River, I've been wanting a good way to quickly see how polluted the water is. If you're aware of the water quality issue, there's a decent chance you've seen the sites that already exist. I think those sites are cool, but missing are missing a few things: recent history (~the last week of so of pollution levels), context (how far above recommended levels is pollution in the water), explanations of pollutants (why is enterococcus the only pollutant tested for at most sites?), and, lastly, a lightweight, mobile-friendly design.
 
-View your app in AI Studio: https://ai.studio/apps/drive/14f0M4O8hzYsguKU0B5Y_8VAeR6iaRwwd
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Warning: this project is vibe-coded! And I haven't done sufficient testing to ensure everything works and is correctyet
