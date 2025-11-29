@@ -1,5 +1,9 @@
 # SD Water Watch
 
+Thanks for visiting my project! Given the pollution issues at some San Diego beaches, particularly those closer to the mouth of the Tijuana River, I've been wanting a good way to quickly see how polluted the water is. If you're aware of the water quality issue, there's a decent chance you've seen the sites that already exist. I think those sites are cool, but missing are missing a few things: recent history (~the last week of so of pollution levels), context (how far above recommended levels is pollution in the water), explanations of pollutants (why is enterococcus the only pollutant tested for at most sites?), and, lastly, a lightweight, mobile-friendly design.
+
+Everything below this point is AI-generated:
+
 A minimalist, high-contrast water quality tracker for San Diego beaches. This application aggregates data from the San Diego County Department of Environmental Health and Quality (DEHQ) and uses Google Gemini AI to analyze safety trends.
 
 <img src="screenshot.png" alt="SD Water Watch App" style="border: 20px solid black; width: 100%;" />
