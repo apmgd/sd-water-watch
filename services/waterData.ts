@@ -1,5 +1,5 @@
 
-import { BeachGroup, StatusLevel, WaterDataPoint } from '../types';
+import { BeachGroup, BeachSite, AreaGroup, StatusLevel, WaterDataPoint } from '../types';
 
 const SD_COUNTY_API_URL = "https://services1.arcgis.com/eGSDp8lpKe5izqVc/arcgis/rest/services/Beach_Water_Quality_Closures_and_Advisories/FeatureServer/0/query";
 
@@ -89,37 +89,162 @@ const assignRegion = (name: string): string => {
   if (n.includes('ocean beach') || n.includes('mission') || n.includes('pacific beach') || n.includes('sunset cliffs')) {
     return "Central";
   }
-  if (n.includes('l Jolla') || n.includes('torrey') || n.includes('del mar') || n.includes('solana') || n.includes('cardiff') || n.includes('encinitas') || n.includes('moonlight') || n.includes('carlsbad') || n.includes('oceanside')) {
+  if (n.includes('la jolla') || n.includes('torrey') || n.includes('del mar') || n.includes('solana') || n.includes('cardiff') || n.includes('encinitas') || n.includes('moonlight') || n.includes('carlsbad') || n.includes('oceanside')) {
     return "North County";
   }
   return "San Diego County";
 };
 
-const processFeatures = (features: ArcGISFeature[]): BeachGroup[] => {
+const assignAreaName = (siteName: string): string => {
+  const n = siteName.toLowerCase();
+
+  // Imperial Beach (includes Tijuana Slough)
+  if (n.includes('imperial') || n.includes('tijuana')) {
+    return "Imperial Beach";
+  }
+
+  // Coronado (includes Silver Strand)
+  if (n.includes('coronado') || n.includes('silver strand')) {
+    return "Coronado";
+  }
+
+  // Ocean Beach
+  if (n.includes('ocean beach') || n.includes('ob ')) {
+    return "Ocean Beach";
+  }
+
+  // Mission Bay
+  if (n.includes('mission')) {
+    return "Mission Bay";
+  }
+
+  // Pacific Beach
+  if (n.includes('pacific beach') || n.includes('pb ')) {
+    return "Pacific Beach";
+  }
+
+  // La Jolla (all La Jolla sites)
+  if (n.includes('la jolla') || n.includes('torrey')) {
+    return "La Jolla";
+  }
+
+  // Del Mar
+  if (n.includes('del mar')) {
+    return "Del Mar";
+  }
+
+  // Solana Beach / Encinitas
+  if (n.includes('solana') || n.includes('encinitas') || n.includes('moonlight') || n.includes('cardiff')) {
+    return "Encinitas / Solana Beach";
+  }
+
+  // Carlsbad
+  if (n.includes('carlsbad')) {
+    return "Carlsbad";
+  }
+
+  // Oceanside
+  if (n.includes('oceanside')) {
+    return "Oceanside";
+  }
+
+  // Default: use the site name as area name
+  return siteName;
+};
+
+const getLast48HoursReadings = (history: WaterDataPoint[]): number[] => {
+  const twoDaysAgo = new Date();
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+  return history
+    .filter(point => new Date(point.date) >= twoDaysAgo)
+    .map(point => point.value);
+};
+
+const calculateAreaMetrics = (sites: BeachSite[]): { highest: number; average: number; worstStatus: StatusLevel } => {
+  let allReadings: number[] = [];
+  let worstStatus = StatusLevel.SAFE;
+
+  sites.forEach(site => {
+    const readings = getLast48HoursReadings(site.history);
+    allReadings = allReadings.concat(readings);
+
+    // Determine worst status
+    if (site.currentStatus === StatusLevel.DANGER) {
+      worstStatus = StatusLevel.DANGER;
+    } else if (site.currentStatus === StatusLevel.WARNING && worstStatus !== StatusLevel.DANGER) {
+      worstStatus = StatusLevel.WARNING;
+    }
+  });
+
+  const highest = allReadings.length > 0 ? Math.max(...allReadings) : 0;
+  const average = allReadings.length > 0 ? Math.round(allReadings.reduce((a, b) => a + b, 0) / allReadings.length) : 0;
+
+  return { highest, average, worstStatus };
+};
+
+const processSites = (features: ArcGISFeature[]): BeachSite[] => {
   return features.map((f, index) => {
       // Safe checks for missing attributes
       const rawStatus = f.attributes?.WaterContact || "Open";
       const name = f.attributes?.Name || "Unknown Beach";
       const dateVal = f.attributes?.Date || Date.now();
       const reason = f.attributes?.Reason || "";
-      
+
       const status = mapStatus(rawStatus);
-      
+
       return {
-        id: `sd-beach-${index}`,
+        id: `sd-site-${index}`,
         name: name,
-        region: assignRegion(name),
         currentStatus: status,
         lastUpdated: new Date(dateVal).toISOString(),
         reason: reason,
         history: generateProjectedHistory(status),
-        latitude: 0, 
+        latitude: 0,
         longitude: 0
       };
     });
-}
+};
 
-export const getBeaches = async (): Promise<BeachGroup[]> => {
+const groupSitesByArea = (sites: BeachSite[]): AreaGroup[] => {
+  // Group sites by area name
+  const areaMap = new Map<string, BeachSite[]>();
+
+  sites.forEach(site => {
+    const areaName = assignAreaName(site.name);
+    if (!areaMap.has(areaName)) {
+      areaMap.set(areaName, []);
+    }
+    areaMap.get(areaName)!.push(site);
+  });
+
+  // Convert map to AreaGroup array
+  const areas: AreaGroup[] = [];
+  let areaIndex = 0;
+
+  areaMap.forEach((sitesInArea, areaName) => {
+    const { highest, average, worstStatus } = calculateAreaMetrics(sitesInArea);
+    const region = assignRegion(sitesInArea[0].name);
+    const mostRecentUpdate = sitesInArea
+      .map(s => new Date(s.lastUpdated).getTime())
+      .reduce((a, b) => Math.max(a, b), 0);
+
+    areas.push({
+      id: `sd-area-${areaIndex++}`,
+      name: areaName,
+      region: region,
+      sites: sitesInArea,
+      highestReading48h: highest,
+      averageReading48h: average,
+      worstStatus: worstStatus,
+      lastUpdated: new Date(mostRecentUpdate).toISOString()
+    });
+  });
+
+  return areas;
+};
+
+export const getAreas = async (): Promise<AreaGroup[]> => {
   try {
     const params = new URLSearchParams({
       where: "1=1",
@@ -134,7 +259,7 @@ export const getBeaches = async (): Promise<BeachGroup[]> => {
     const response = await fetch(`${SD_COUNTY_API_URL}?${params.toString()}`, {
       signal: controller.signal
     });
-    
+
     clearTimeout(timeoutId);
 
     if (!response.ok) {
@@ -147,10 +272,15 @@ export const getBeaches = async (): Promise<BeachGroup[]> => {
       throw new Error("Invalid API response format");
     }
 
-    return processFeatures(data.features);
+    const sites = processSites(data.features);
+    return groupSitesByArea(sites);
 
   } catch (error) {
     console.warn("Real-time water data unavailable. Using fallback data.", error);
-    return processFeatures(FALLBACK_DATA as ArcGISFeature[]);
+    const sites = processSites(FALLBACK_DATA as ArcGISFeature[]);
+    return groupSitesByArea(sites);
   }
 };
+
+// Legacy function for backwards compatibility
+export const getBeaches = getAreas;

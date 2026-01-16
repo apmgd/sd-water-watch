@@ -1,34 +1,34 @@
 
 import React, { useState } from 'react';
-import { BeachGroup, StatusLevel, WaterDataPoint } from '../types';
+import { AreaGroup, BeachSite, StatusLevel, WaterDataPoint } from '../types';
 import { Database, FileDown, CalendarDays } from 'lucide-react';
 
 interface Props {
-  beaches: BeachGroup[];
+  areas: AreaGroup[];
 }
 
 type TimeRange = 7 | 30 | 180;
 
 // Sub-component for individual site rows to manage their own state
-const SiteDataRow: React.FC<{ beach: BeachGroup }> = ({ beach }) => {
+const SiteDataRow: React.FC<{ site: BeachSite; areaName: string }> = ({ site, areaName }) => {
   const [range, setRange] = useState<TimeRange>(7);
 
   // Filter history based on range
-  const visibleHistory = beach.history.slice(-range).reverse(); // Show newest first
+  const visibleHistory = site.history.slice(-range).reverse(); // Show newest first
 
   return (
     <div className="border border-neutral-200 bg-white mb-6 shadow-sm hover:shadow-md transition-shadow">
       {/* Site Header */}
       <div className="p-4 md:p-6 border-b border-neutral-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h3 className="text-xl font-bold tracking-tight">{beach.name}</h3>
+          <h3 className="text-xl font-bold tracking-tight">{site.name}</h3>
           <div className="flex items-center gap-2 mt-1">
              <div className={`w-2 h-2 rounded-full ${
-                beach.currentStatus === StatusLevel.SAFE ? 'bg-green-500' : 
-                beach.currentStatus === StatusLevel.WARNING ? 'bg-yellow-500' : 'bg-red-600'
+                site.currentStatus === StatusLevel.SAFE ? 'bg-green-500' :
+                site.currentStatus === StatusLevel.WARNING ? 'bg-yellow-500' : 'bg-red-600'
              }`} />
              <span className="text-xs font-mono text-neutral-500 uppercase">
-               {beach.currentStatus} {beach.reason && `• ${beach.reason}`}
+               {site.currentStatus} {site.reason && `• ${site.reason}`} • {areaName}
              </span>
           </div>
         </div>
@@ -107,18 +107,23 @@ const SiteDataRow: React.FC<{ beach: BeachGroup }> = ({ beach }) => {
   );
 };
 
-export const InfoView: React.FC<Props> = ({ beaches }) => {
+export const InfoView: React.FC<Props> = ({ areas }) => {
   const [selectedRegion, setSelectedRegion] = useState<string>("South Bay");
 
   // Get unique regions
-  const regions = Array.from(new Set(beaches.map(b => b.region))).sort((a: string, b: string) => {
+  const regions = Array.from(new Set(areas.map(a => a.region))).sort((a: string, b: string) => {
     // Custom sort to keep South Bay first as it's the priority
     if (a === 'South Bay') return -1;
     if (b === 'South Bay') return 1;
     return a.localeCompare(b);
   });
 
-  const filteredBeaches = beaches.filter(b => b.region === selectedRegion);
+  // Flatten areas to get all sites with their area names
+  const sitesWithAreas = areas.flatMap(area =>
+    area.sites.map(site => ({ site, areaName: area.name, region: area.region }))
+  );
+
+  const filteredSites = sitesWithAreas.filter(s => s.region === selectedRegion);
 
   return (
     <div className="max-w-4xl mx-auto pb-20 animate-in fade-in duration-500">
@@ -152,13 +157,13 @@ export const InfoView: React.FC<Props> = ({ beaches }) => {
 
       {/* Zone Content */}
       <div className="space-y-8">
-        {filteredBeaches.length === 0 ? (
+        {filteredSites.length === 0 ? (
             <div className="p-12 text-center border-2 border-dashed border-neutral-200 text-neutral-400 font-mono">
                 NO DATA AVAILABLE FOR THIS ZONE
             </div>
         ) : (
-            filteredBeaches.map((beach) => (
-                <SiteDataRow key={beach.id} beach={beach} />
+            filteredSites.map(({ site, areaName }) => (
+                <SiteDataRow key={site.id} site={site} areaName={areaName} />
             ))
         )}
       </div>
