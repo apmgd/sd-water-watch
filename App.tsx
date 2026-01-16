@@ -3,15 +3,12 @@ import { BeachListItem } from './components/BeachListItem';
 import { WaterChart } from './components/WaterChart';
 import { InfoView } from './components/InfoView';
 import { getBeaches } from './services/waterData';
-import { analyzeWaterQuality } from './services/geminiService';
 import { BeachGroup } from './types';
-import { X, RefreshCcw, Waves, Sparkles, Loader2, LayoutList, Info } from 'lucide-react';
+import { X, Waves, Loader2, LayoutList, Info } from 'lucide-react';
 
 export default function App() {
   const [beaches, setBeaches] = useState<BeachGroup[]>([]);
   const [selectedBeach, setSelectedBeach] = useState<BeachGroup | null>(null);
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'monitor' | 'info'>('monitor');
 
@@ -25,28 +22,8 @@ export default function App() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (selectedBeach) {
-      setAiAnalysis(null);
-      // Trigger Gemini Analysis automatically when opening details
-      const fetchAnalysis = async () => {
-        setAnalyzing(true);
-        const result = await analyzeWaterQuality(
-          selectedBeach.name,
-          selectedBeach.history,
-          selectedBeach.currentStatus
-        );
-        setAiAnalysis(result);
-        setAnalyzing(false);
-      };
-      
-      fetchAnalysis();
-    }
-  }, [selectedBeach]);
-
   const handleClose = () => {
     setSelectedBeach(null);
-    setAiAnalysis(null);
   };
 
   return (
@@ -201,25 +178,6 @@ export default function App() {
                 <p className="text-xs text-neutral-400 mt-2 text-center">
                   *Historical data projected based on current County safety status.
                 </p>
-              </div>
-
-              {/* AI Analysis */}
-              <div className="bg-black text-white p-6 md:p-8 rounded-none md:rounded-xl">
-                <div className="flex items-center gap-2 mb-4 text-purple-300">
-                  <Sparkles className="w-5 h-5" />
-                  <h3 className="font-bold text-sm tracking-widest uppercase">Gemini Analysis</h3>
-                </div>
-                
-                {analyzing ? (
-                  <div className="flex items-center gap-3 animate-pulse">
-                    <RefreshCcw className="w-5 h-5 animate-spin" />
-                    <span className="font-mono text-sm">Analyzing conditions...</span>
-                  </div>
-                ) : (
-                  <p className="text-lg md:text-xl font-medium leading-relaxed">
-                    "{aiAnalysis}"
-                  </p>
-                )}
               </div>
 
             </div>
