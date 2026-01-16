@@ -1,0 +1,15 @@
+{
+  "name": "SD Water Watch",
+  "short_name": "SD Water",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/header-wave.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    }
+  ]
+}
