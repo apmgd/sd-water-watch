@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 8080",
     "start": "vite preview --host 0.0.0.0 --port 8080",
-    "deploy": "vite build && gh-pages -d dist"
+    "deploy": "vite build && gh-pages -d dist --nojekyll --dotfiles"
   },
   "dependencies": {
     "react": "^18.3.1",
