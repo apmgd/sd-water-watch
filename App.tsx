@@ -97,8 +97,30 @@ export default function App() {
             <p className="font-mono text-sm text-neutral-500">FETCHING COUNTY DATA...</p>
           </div>
         ) : areas.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="font-mono text-red-500">UNABLE TO CONNECT TO COUNTY SERVERS</p>
+          <div className="text-center py-20 max-w-2xl mx-auto">
+            <p className="font-mono text-red-600 text-lg font-bold mb-4">⚠ REAL-TIME DATA UNAVAILABLE</p>
+            <p className="text-neutral-600 mb-4">
+              Unable to connect to San Diego County's water quality monitoring system. This may be due to:
+            </p>
+            <ul className="text-left text-sm text-neutral-600 space-y-2 mb-6 inline-block">
+              <li>• Temporary API outage</li>
+              <li>• Network connectivity issues</li>
+              <li>• County server maintenance</li>
+            </ul>
+            <p className="text-neutral-700 font-medium mb-4">
+              Please check the official source directly:
+            </p>
+            <a
+              href="http://www.sdbeachinfo.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-6 py-3 bg-black text-white font-bold uppercase tracking-wider hover:bg-neutral-800 transition-colors"
+            >
+              Visit SD County Beach Info →
+            </a>
+            <p className="text-xs text-neutral-400 mt-6">
+              Or try refreshing this page in a few minutes.
+            </p>
           </div>
         ) : (
           <>
