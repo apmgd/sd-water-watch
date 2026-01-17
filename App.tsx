@@ -73,6 +73,22 @@ export default function App() {
         </div>
       </header>
 
+      {/* Explainer Section */}
+      <div className="max-w-4xl mx-auto mb-8 p-6 bg-neutral-50 border border-neutral-200">
+        <h3 className="font-bold text-lg mb-3 uppercase tracking-wider">Understanding Water Quality</h3>
+        <div className="text-sm text-neutral-700 space-y-2">
+          <p>
+            <strong>Safe Levels:</strong> California uses <strong>104 MPN/100ml</strong> (Most Probable Number per 100 milliliters) of enterococcus bacteria as the single-sample threshold for beach advisories and closures. A geometric mean of <strong>35 MPN/100ml</strong> over 30 days is also monitored. These standards are set by the EPA to protect public health from waterborne illnesses.
+          </p>
+          <p>
+            <strong>Why These Levels?</strong> Enterococcus bacteria indicate the presence of fecal contamination, which can contain pathogens causing gastrointestinal illness, skin infections, and respiratory issues. The 104 MPN threshold represents an acceptable level of risk for recreational water use.
+          </p>
+          <p>
+            <strong>Rain Impact:</strong> Water quality typically worsens significantly after rainfall, even without human-caused pollution. Rain washes bacteria, debris, and natural contaminants from land into the ocean. Urban runoff from storms can also carry pollutants from streets and drains. Always check water quality status after rain before swimming.
+          </p>
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <main className="min-h-[50vh]">
         {loading ? (
@@ -81,8 +97,30 @@ export default function App() {
             <p className="font-mono text-sm text-neutral-500">FETCHING COUNTY DATA...</p>
           </div>
         ) : areas.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="font-mono text-red-500">UNABLE TO CONNECT TO COUNTY SERVERS</p>
+          <div className="text-center py-20 max-w-2xl mx-auto">
+            <p className="font-mono text-red-600 text-lg font-bold mb-4">⚠ REAL-TIME DATA UNAVAILABLE</p>
+            <p className="text-neutral-600 mb-4">
+              Unable to connect to San Diego County's water quality monitoring system. This may be due to:
+            </p>
+            <ul className="text-left text-sm text-neutral-600 space-y-2 mb-6 inline-block">
+              <li>• Temporary API outage</li>
+              <li>• Network connectivity issues</li>
+              <li>• County server maintenance</li>
+            </ul>
+            <p className="text-neutral-700 font-medium mb-4">
+              Please check the official source directly:
+            </p>
+            <a
+              href="http://www.sdbeachinfo.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-6 py-3 bg-black text-white font-bold uppercase tracking-wider hover:bg-neutral-800 transition-colors"
+            >
+              Visit SD County Beach Info →
+            </a>
+            <p className="text-xs text-neutral-400 mt-6">
+              Or try refreshing this page in a few minutes.
+            </p>
           </div>
         ) : (
           <>
@@ -195,6 +233,11 @@ export default function App() {
                         }`}>
                           {site.currentStatus}
                         </span>
+                        {site.reason && (
+                          <p className="text-xs text-neutral-600 mt-1">
+                            Reason: {site.reason}
+                          </p>
+                        )}
                       </div>
                     </div>
 

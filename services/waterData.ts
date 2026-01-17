@@ -13,21 +13,6 @@ interface ArcGISFeature {
   };
 }
 
-// Fallback data ensures the app works for the demo even if the government API is flaky/down
-const FALLBACK_DATA = [
-  { attributes: { Name: "Imperial Beach Pier", WaterContact: "Closure", Date: Date.now(), Reason: "Sewage Impact" } },
-  { attributes: { Name: "Tijuana Slough Shoreline", WaterContact: "Closure", Date: Date.now(), Reason: "Tijuana River Flow" } },
-  { attributes: { Name: "Silver Strand", WaterContact: "Advisory", Date: Date.now(), Reason: "General Advisory" } },
-  { attributes: { Name: "Coronado Lifeguard Tower", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "Ocean Beach", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "Mission Bay - Visitor Center", WaterContact: "Advisory", Date: Date.now(), Reason: "Bacteria Levels" } },
-  { attributes: { Name: "Pacific Beach", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "La Jolla Cove", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "Del Mar Beach", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "Moonlight Beach", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "Carlsbad State Beach", WaterContact: "Open", Date: Date.now(), Reason: "" } },
-  { attributes: { Name: "Oceanside Pier", WaterContact: "Advisory", Date: Date.now(), Reason: "Urban Runoff" } },
-];
 
 const generateProjectedHistory = (status: StatusLevel): WaterDataPoint[] => {
   const history: WaterDataPoint[] = [];
@@ -245,17 +230,17 @@ const groupSitesByArea = (sites: BeachSite[]): AreaGroup[] => {
 };
 
 export const getAreas = async (): Promise<AreaGroup[]> => {
+  const params = new URLSearchParams({
+    where: "1=1",
+    outFields: "Name,WaterContact,Date,Reason",
+    f: "json",
+    orderByFields: "Name ASC"
+  });
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased to 10s
+
   try {
-    const params = new URLSearchParams({
-      where: "1=1",
-      outFields: "Name,WaterContact,Date,Reason",
-      f: "json",
-      orderByFields: "Name ASC"
-    });
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
     const response = await fetch(`${SD_COUNTY_API_URL}?${params.toString()}`, {
       signal: controller.signal
     });
@@ -268,17 +253,20 @@ export const getAreas = async (): Promise<AreaGroup[]> => {
 
     const data = await response.json();
 
-    if (!data || !data.features) {
-      throw new Error("Invalid API response format");
+    if (!data || !data.features || data.features.length === 0) {
+      throw new Error("No data returned from API");
     }
 
     const sites = processSites(data.features);
-    return groupSitesByArea(sites);
+    const areas = groupSitesByArea(sites);
+
+    console.log(`Successfully loaded ${sites.length} sites grouped into ${areas.length} areas`);
+    return areas;
 
   } catch (error) {
-    console.warn("Real-time water data unavailable. Using fallback data.", error);
-    const sites = processSites(FALLBACK_DATA as ArcGISFeature[]);
-    return groupSitesByArea(sites);
+    console.error("Failed to fetch water quality data:", error);
+    // Return empty array - the UI will show an appropriate error message
+    return [];
   }
 };
 
